@@ -1,14 +1,15 @@
 var hangman;
+var hangmanCanvas;
 
 function Hangman() {
   this.words = [
-    "Ironman",
-    "Toto",
-    "HelloWorld!",
-    "Ironhack",
-    "Javascript",
-    "Cable",
-    "Hulk"
+    "ironman",
+    "toto",
+    "helloworld",
+    "ironhack",
+    "javascript",
+    "cable",
+    "hulk"
   ];
   this.secretWord = this.getWord();
   this.letters = [];
@@ -32,6 +33,10 @@ Hangman.prototype.checkIfLetter = function(keyCode) {
 };
 
 Hangman.prototype.checkClickedLetters = function(key) {
+  debugger;
+  var array = this.letters.filter(function(letter) {
+    return letter === key;
+  });
   if (this.letters.length > 0 && this.letters.includes(key)) {
     return false;
   }
@@ -53,15 +58,19 @@ Hangman.prototype.checkGameOver = function() {
 };
 
 Hangman.prototype.checkWinner = function() {
+  var nbLetters = 0;
   if (this.secretWord.length === this.guessedLetter.length) {
-    for (let i = 0; i < this.secretWord.length; i++) {
-      const element = this.secretWord[i];
-      for (let j = 0; j < this.guessedLetter.length; j++) {
-        const elementGuess = this.guessedLetter[j];
+    for (var i = 0; i < this.guessedLetter.length; i++) {
+      const elementGuess = this.guessedLetter[i];
+      for (var j = 0; j < this.secretWord.length; j++) {
+        const element = this.secretWord[j];
         if (element === elementGuess) {
-          return true;
+          nbLetters++;
         }
       }
+    }
+    if (nbLetters === this.secretWord.length) {
+      return true;
     }
   }
   return false;
@@ -72,11 +81,45 @@ document.getElementById("start-game-button").onclick = function() {
 
   hangman.letters.push(hangman.secretWord[0]);
   hangman.letters.push(hangman.secretWord[hangman.secretWord.length - 1]);
-
-  var hangmanCanvas = new HangmanCanvas(hangman.secretWord);
+  hangman.guessedLetter += hangman.secretWord[0];
+  hangman.guessedLetter += hangman.secretWord[hangman.secretWord.length - 1];
+  hangmanCanvas = new HangmanCanvas(hangman.secretWord);
   hangmanCanvas.createBoard();
-  hangmanCanvas.drawLines();
-  //hangmanCanvas.drawHangman();
 };
 
-document.onkeydown = function(e) {};
+function alertPlayer(hangman) {
+  if (hangman.checkWinner()) {
+    alert("you win");
+    return true;
+  } else if (hangman.checkGameOver()) {
+    alert("you lose");
+    return true;
+  }
+  return false;
+}
+
+document.onkeydown = function(e) {
+  if (alertPlayer(hangman)) return;
+
+  if (hangman.checkIfLetter(e.keyCode)) {
+    var pos = prompt("position ? ");
+    hangman.letters.push(e.key);
+    if (
+      /*!hangman.checkClickedLetters(e.key) &*/
+      hangman.secretWord.includes(e.key) &&
+      hangman.secretWord[pos] === e.key
+    ) {
+      hangman.addCorrectLetter(pos);
+      hangmanCanvas.writeCorrectLetter(pos);
+    } else {
+      hangman.addWrongLetter();
+      if (hangman.errorsLeft >= 4) {
+        hangmanCanvas.drawLines(hangman.errorsLeft);
+      } else {
+        hangmanCanvas.drawHangman(hangman.errorsLeft);
+      }
+    }
+
+    if (alertPlayer(hangman)) return;
+  }
+};
